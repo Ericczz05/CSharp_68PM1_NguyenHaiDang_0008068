@@ -392,7 +392,25 @@ namespace QLSINHVIEN
         }
         public void button10_Click(object sender, EventArgs e)
         {
-            loadUC(new UCQLSV());
+            string maLop = txt_ma_lop.Text.Trim();
+            if (lopHocDangChonId <= 0 || string.IsNullOrWhiteSpace(maLop))
+            {
+                MessageBox.Show("Vui lòng chọn lớp học cần xem danh sách sinh viên");
+                return;
+            }
+
+            lophoc lop = db.lophocs.FirstOrDefault(l => l.id == lopHocDangChonId && l.malop == maLop);
+            if (lop == null)
+            {
+                MessageBox.Show("Không tìm thấy lớp học cần xem danh sách sinh viên");
+                LoadLopHoc();
+                lamMoiThongTinNhap();
+                return;
+            }
+
+            UCQLSV ucSinhVien = new UCQLSV();
+            ucSinhVien.HienThiSinhVienTheoLop(maLop);
+            loadUC(ucSinhVien);
         }
 
         private void textBox2_TextChanged_2(object sender, EventArgs e)

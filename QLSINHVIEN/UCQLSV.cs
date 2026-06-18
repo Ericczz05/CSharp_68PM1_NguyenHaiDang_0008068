@@ -15,6 +15,7 @@ namespace QLSINHVIEN
         private int tongSoDong = 0;
         private int tongSoTrang = 1;
         private int sinhVienDangChonId = 0;
+        private string maLopDangLoc = string.Empty;
 
         public UCQLSV()
         {
@@ -25,6 +26,23 @@ namespace QLSINHVIEN
             CauHinhDelete();
             CauHinhTimKiem();
             LoadLopHoc();
+        }
+
+        public UCQLSV(string maLop)
+            : this()
+        {
+            HienThiSinhVienTheoLop(maLop);
+        }
+
+        public void HienThiSinhVienTheoLop(string maLop)
+        {
+            maLopDangLoc = maLop == null ? string.Empty : maLop.Trim();
+            txt_search.Clear();
+            trangHienTai = 1;
+            label6.Text = string.IsNullOrWhiteSpace(maLopDangLoc)
+                ? "Tìm kiếm (Tên/ Mã SV/ Lớp) :"
+                : $"Danh sách sinh viên lớp {maLopDangLoc}:";
+            LoadSinhVien();
         }
 
         private void UCQLSV_Load(object sender, EventArgs e)
@@ -64,6 +82,11 @@ namespace QLSINHVIEN
         {
             string tuKhoa = txt_search.Text.Trim();
             var truyVan = db.sinhviens.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(maLopDangLoc))
+            {
+                truyVan = truyVan.Where(sv => sv.malop == maLopDangLoc);
+            }
 
             if (!string.IsNullOrWhiteSpace(tuKhoa))
             {
