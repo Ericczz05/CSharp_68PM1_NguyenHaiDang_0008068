@@ -22,6 +22,7 @@ namespace QLSINHVIEN
             CauHinhDataGridView();
             CauHinhPhanTrang();
             CauHinhUpdate();
+            CauHinhDelete();
             LoadLopHoc();
         }
 
@@ -75,6 +76,11 @@ namespace QLSINHVIEN
         private void CauHinhUpdate()
         {
             btn_edit.Click += btn_edit_Click;
+        }
+
+        private void CauHinhDelete()
+        {
+            btn_delete.Click += btn_delete_Click;
         }
 
         private void CapNhatThongTinPhanTrang()
@@ -263,6 +269,69 @@ namespace QLSINHVIEN
             {
                 MessageBox.Show(ex.Message);
             }
+        }
+
+        private void btn_delete_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (sinhVienDangChonId <= 0)
+                {
+                    MessageBox.Show("Vui lòng chọn sinh viên cần xóa");
+                    return;
+                }
+
+                sinhvien svCanXoa = db.sinhviens.FirstOrDefault(sv => sv.id == sinhVienDangChonId);
+                if (svCanXoa == null)
+                {
+                    MessageBox.Show("Không tìm thấy sinh viên cần xóa");
+                    LoadSinhVien();
+                    LamMoiThongTinNhap();
+                    return;
+                }
+
+                DialogResult result = MessageBox.Show(
+                    $"Bạn có chắc muốn xóa sinh viên {svCanXoa.hoten}?",
+                    "Xác nhận xóa",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result != DialogResult.Yes)
+                {
+                    return;
+                }
+
+                db.sinhviens.DeleteOnSubmit(svCanXoa);
+                db.SubmitChanges();
+
+                MessageBox.Show("Xóa thành công");
+                LoadSinhVien();
+                LamMoiThongTinNhap();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void LamMoiThongTinNhap()
+        {
+            sinhVienDangChonId = 0;
+            txt_mssv.Clear();
+            txt_name.Clear();
+            date_ngaysinh.Value = DateTime.Today;
+
+            if (box_gioitinh.Items.Count > 0)
+            {
+                box_gioitinh.SelectedIndex = 0;
+            }
+
+            if (box_lophoc.Items.Count > 0)
+            {
+                box_lophoc.SelectedIndex = 0;
+            }
+
+            dataGridView1.ClearSelection();
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
