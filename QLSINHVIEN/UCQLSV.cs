@@ -23,6 +23,7 @@ namespace QLSINHVIEN
             CauHinhPhanTrang();
             CauHinhUpdate();
             CauHinhDelete();
+            CauHinhTimKiem();
             LoadLopHoc();
         }
 
@@ -33,11 +34,13 @@ namespace QLSINHVIEN
         }
         private void LoadSinhVien()
         {
-            tongSoDong = db.sinhviens.Count();
+            var truyVan = TaoTruyVanSinhVien();
+
+            tongSoDong = truyVan.Count();
             tongSoTrang = Math.Max(1, (int)Math.Ceiling((double)tongSoDong / SoDongMoiTrang));
             trangHienTai = Math.Max(1, Math.Min(trangHienTai, tongSoTrang));
 
-            var ds = from sv in db.sinhviens
+            var ds = from sv in truyVan
                      orderby sv.id
                      select new
                      {
@@ -55,6 +58,22 @@ namespace QLSINHVIEN
             sinhVienDangChonId = 0;
             dataGridView1.ClearSelection();
             CapNhatThongTinPhanTrang();
+        }
+
+        private IQueryable<sinhvien> TaoTruyVanSinhVien()
+        {
+            string tuKhoa = txt_search.Text.Trim();
+            var truyVan = db.sinhviens.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(tuKhoa))
+            {
+                truyVan = truyVan.Where(sv => sv.masv.Contains(tuKhoa)
+                                           || sv.hoten.Contains(tuKhoa)
+                                           || sv.malop.Contains(tuKhoa)
+                                           || sv.lophoc.tenlop.Contains(tuKhoa));
+            }
+
+            return truyVan;
         }
 
         private void CauHinhDataGridView()
@@ -81,6 +100,12 @@ namespace QLSINHVIEN
         private void CauHinhDelete()
         {
             btn_delete.Click += btn_delete_Click;
+        }
+
+        private void CauHinhTimKiem()
+        {
+            btn_search.Click += btn_search_Click;
+            txt_search.KeyDown += txt_search_KeyDown;
         }
 
         private void CapNhatThongTinPhanTrang()
@@ -311,6 +336,21 @@ namespace QLSINHVIEN
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void btn_search_Click(object sender, EventArgs e)
+        {
+            trangHienTai = 1;
+            LoadSinhVien();
+        }
+
+        private void txt_search_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                btn_search_Click(sender, e);
+                e.SuppressKeyPress = true;
             }
         }
 
