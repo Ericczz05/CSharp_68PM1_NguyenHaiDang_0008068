@@ -18,12 +18,18 @@ namespace QLSINHVIEN
         private int trangHienTai = 1;
         private int tongSoDong = 0;
         private int tongSoTrang = 1;
+        private int lopHocDangChonId = 0;
 
         public UCQLLH()
         {
             InitializeComponent();
             CauHinhDataGridView();
             CauHinhPhanTrang();
+            txt_id_lop.ReadOnly = true;
+            btn_add.Click += btn_add_Click;
+            btn_edit.Click += btn_edit_Click;
+            btn_delete.Click += btn_delete_Click;
+            btn_refresh.Click += btn_refresh_Click;
             LoadLopHoc();
         }
 
@@ -81,6 +87,7 @@ namespace QLSINHVIEN
 
         private void DoThongTinLopHoc(DataGridViewRow row)
         {
+            int.TryParse(LayGiaTriCell(row, "id"), out lopHocDangChonId);
             txt_id_lop.Text = LayGiaTriCell(row, "id");
             txt_ma_lop.Text = LayGiaTriCell(row, "malop");
             txt_ten_lop.Text = LayGiaTriCell(row, "tenlop");
@@ -402,6 +409,196 @@ namespace QLSINHVIEN
             LoadLopHoc();
         }
 
+        private void btn_add_Click(object sender, EventArgs e)
+        {
+            add();
+        }
+
+        private void btn_edit_Click(object sender, EventArgs e)
+        {
+            update();
+        }
+
+        private void btn_delete_Click(object sender, EventArgs e)
+        {
+            delete();
+        }
+
+        private void btn_refresh_Click(object sender, EventArgs e)
+        {
+            refresh();
+        }
+
+        private void add()
+        {
+            try
+            {
+                if (!kiemTraDuLieuNhap())
+                {
+                    return;
+                }
+
+                string maLop = txt_ma_lop.Text.Trim();
+                if (db.lophocs.Any(l => l.malop == maLop))
+                {
+                    MessageBox.Show("Mã lớp đã tồn tại");
+                    txt_ma_lop.Focus();
+                    return;
+                }
+
+                lophoc lop = new lophoc();
+                lop.malop = maLop;
+                lop.tenlop = txt_ten_lop.Text.Trim();
+                lop.ghichu = txt_ghichu_lop.Text.Trim();
+
+                db.lophocs.InsertOnSubmit(lop);
+                db.SubmitChanges();
+
+                MessageBox.Show("Thêm thành công");
+                trangHienTai = int.MaxValue;
+                LoadLopHoc();
+                lamMoiThongTinNhap();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void update()
+        {
+            try
+            {
+                if (lopHocDangChonId <= 0)
+                {
+                    MessageBox.Show("Vui lòng chọn lớp học cần sửa");
+                    return;
+                }
+
+                if (!kiemTraDuLieuNhap())
+                {
+                    return;
+                }
+
+                string maLop = txt_ma_lop.Text.Trim();
+                if (db.lophocs.Any(l => l.malop == maLop && l.id != lopHocDangChonId))
+                {
+                    MessageBox.Show("Mã lớp đã tồn tại");
+                    txt_ma_lop.Focus();
+                    return;
+                }
+
+                lophoc lop = db.lophocs.FirstOrDefault(l => l.id == lopHocDangChonId);
+                if (lop == null)
+                {
+                    MessageBox.Show("Không tìm thấy lớp học cần sửa");
+                    LoadLopHoc();
+                    lamMoiThongTinNhap();
+                    return;
+                }
+
+                lop.malop = maLop;
+                lop.tenlop = txt_ten_lop.Text.Trim();
+                lop.ghichu = txt_ghichu_lop.Text.Trim();
+
+                db.SubmitChanges();
+
+                MessageBox.Show("Sửa thành công");
+                LoadLopHoc();
+                lamMoiThongTinNhap();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void delete()
+        {
+            try
+            {
+                if (lopHocDangChonId <= 0)
+                {
+                    MessageBox.Show("Vui lòng chọn lớp học cần xóa");
+                    return;
+                }
+
+                lophoc lop = db.lophocs.FirstOrDefault(l => l.id == lopHocDangChonId);
+                if (lop == null)
+                {
+                    MessageBox.Show("Không tìm thấy lớp học cần xóa");
+                    LoadLopHoc();
+                    lamMoiThongTinNhap();
+                    return;
+                }
+
+                if (db.sinhviens.Any(sv => sv.malop == lop.malop))
+                {
+                    MessageBox.Show("Không thể xóa lớp đang có sinh viên");
+                    return;
+                }
+
+                DialogResult result = MessageBox.Show(
+                    $"Bạn có chắc muốn xóa lớp {lop.tenlop}?",
+                    "Xác nhận xóa",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result != DialogResult.Yes)
+                {
+                    return;
+                }
+
+                db.lophocs.DeleteOnSubmit(lop);
+                db.SubmitChanges();
+
+                MessageBox.Show("Xóa thành công");
+                LoadLopHoc();
+                lamMoiThongTinNhap();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void refresh()
+        {
+            txt_search.Clear();
+            trangHienTai = 1;
+            LoadLopHoc();
+            lamMoiThongTinNhap();
+        }
+
+        private bool kiemTraDuLieuNhap()
+        {
+            if (string.IsNullOrWhiteSpace(txt_ma_lop.Text))
+            {
+                MessageBox.Show("Vui lòng nhập mã lớp");
+                txt_ma_lop.Focus();
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(txt_ten_lop.Text))
+            {
+                MessageBox.Show("Vui lòng nhập tên lớp");
+                txt_ten_lop.Focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        private void lamMoiThongTinNhap()
+        {
+            lopHocDangChonId = 0;
+            txt_id_lop.Clear();
+            txt_ma_lop.Clear();
+            txt_ten_lop.Clear();
+            txt_ghichu_lop.Clear();
+            dataGridView1.ClearSelection();
+        }
+
         private void LoadLopHoc()
         {
             var ds = from l in db.lophocs
@@ -421,6 +618,8 @@ namespace QLSINHVIEN
             dataGridView1.DataSource = ds.Skip((trangHienTai - 1) * SoDongMoiTrang)
                                          .Take(SoDongMoiTrang)
                                          .ToList();
+            lopHocDangChonId = 0;
+            dataGridView1.ClearSelection();
             CapNhatThongTinPhanTrang();
         }
     }
