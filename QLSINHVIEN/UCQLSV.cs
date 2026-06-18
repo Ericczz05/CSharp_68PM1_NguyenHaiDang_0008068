@@ -14,12 +14,14 @@ namespace QLSINHVIEN
         private int trangHienTai = 1;
         private int tongSoDong = 0;
         private int tongSoTrang = 1;
+        private int sinhVienDangChonId = 0;
 
         public UCQLSV()
         {
             InitializeComponent();
             CauHinhDataGridView();
             CauHinhPhanTrang();
+            CauHinhUpdate();
             LoadLopHoc();
         }
 
@@ -49,6 +51,8 @@ namespace QLSINHVIEN
             dataGridView1.DataSource = ds.Skip((trangHienTai - 1) * SoDongMoiTrang)
                                          .Take(SoDongMoiTrang)
                                          .ToList();
+            sinhVienDangChonId = 0;
+            dataGridView1.ClearSelection();
             CapNhatThongTinPhanTrang();
         }
 
@@ -66,6 +70,11 @@ namespace QLSINHVIEN
             button7.Click += button7_Click;
             button9.Click += button9_Click;
             button8.Click += button8_Click;
+        }
+
+        private void CauHinhUpdate()
+        {
+            btn_edit.Click += btn_edit_Click;
         }
 
         private void CapNhatThongTinPhanTrang()
@@ -126,6 +135,7 @@ namespace QLSINHVIEN
 
         private void DoThongTinSinhVien(DataGridViewRow row)
         {
+            int.TryParse(LayGiaTriCell(row, "id"), out sinhVienDangChonId);
             txt_mssv.Text = LayGiaTriCell(row, "masv");
             txt_name.Text = LayGiaTriCell(row, "hoten");
             box_gioitinh.Text = LayGiaTriCell(row, "gioitinh");
@@ -182,6 +192,77 @@ namespace QLSINHVIEN
 
 
 
+        }
+
+        private void btn_edit_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (sinhVienDangChonId <= 0)
+                {
+                    MessageBox.Show("Vui lòng chọn sinh viên cần sửa");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(txt_mssv.Text))
+                {
+                    MessageBox.Show("Vui lòng nhập mã sinh viên");
+                    txt_mssv.Focus();
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(txt_name.Text))
+                {
+                    MessageBox.Show("Vui lòng nhập họ tên");
+                    txt_name.Focus();
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(box_gioitinh.Text))
+                {
+                    MessageBox.Show("Vui lòng chọn giới tính");
+                    box_gioitinh.Focus();
+                    return;
+                }
+
+                if (box_lophoc.SelectedValue == null)
+                {
+                    MessageBox.Show("Vui lòng chọn lớp");
+                    box_lophoc.Focus();
+                    return;
+                }
+
+                string maSinhVien = txt_mssv.Text.Trim();
+                bool trungMa = db.sinhviens.Any(sv => sv.masv == maSinhVien && sv.id != sinhVienDangChonId);
+                if (trungMa)
+                {
+                    MessageBox.Show("Mã sinh viên đã tồn tại");
+                    txt_mssv.Focus();
+                    return;
+                }
+
+                sinhvien svCanSua = db.sinhviens.FirstOrDefault(sv => sv.id == sinhVienDangChonId);
+                if (svCanSua == null)
+                {
+                    MessageBox.Show("Không tìm thấy sinh viên cần sửa");
+                    LoadSinhVien();
+                    return;
+                }
+
+                svCanSua.masv = maSinhVien;
+                svCanSua.hoten = txt_name.Text.Trim();
+                svCanSua.ngaysinh = date_ngaysinh.Value.Date;
+                svCanSua.gioitinh = box_gioitinh.Text.Trim();
+                svCanSua.malop = box_lophoc.SelectedValue.ToString();
+
+                db.SubmitChanges();
+                MessageBox.Show("Sửa thành công");
+                LoadSinhVien();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
